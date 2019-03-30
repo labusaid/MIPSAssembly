@@ -50,6 +50,8 @@ main:
 #exit if num of bytes read <= 0
 #ble $v0, 0, error
 jal printArr
+jal selectionSortArr
+jal printArr
 
 j exit
 
@@ -80,7 +82,7 @@ loop1:
 addi $a0, $a0, 8
 lb $t0, ($a0)
 #test character
-beq $t0, $zero, endLoop1
+beqz $t0, endLoop1
 blt $t0, $t1, loop1
 bgt $t0, $t2, loop1
 sw $t0, ($a1)
@@ -92,20 +94,40 @@ jr $ra
 #Prints all ints in IntArr
 printArr:
 la $a1, IntArr
+lw $a0, 0($a1)
 loop2:
 li $v0, 1
-lw $a0, 0($a1)
 syscall
-addi $a1, $a1, 4
 printString(Space)
+#loads next element of IntArr into $a0
+addi $a1, $a1, 4
 lw $a0, 0($a1)
+#exit loop if IntArr element is 0
 bnez $a0, loop2
-endLoop2:
 jr $ra
 
 #Selection sorts IntArr
 selectionSortArr:
-
+la $a1, IntArr
+lw $t0, 0($a1)
+lw $t1, 4($a1)
+loop3:
+#$t0 is selected element, $t1 is compared element
+inLoop3:
+bge $t0, $t1, skip3
+sw $t0, 0($a2)
+sw $t1, 0($a1)
+skip3:
+addi $a2, $a2, 4
+lw $t1, 0($a2)
+bnez $t1, inLoop3
+#loads next elements of IntArr
+addi $a1, $a1, 4
+lw $t0, 0($a1)
+addi $a2, $a1, 4
+lw $t1, 0($a2)
+#exit loop if IntArr element is 0
+bnez $t0, loop3
 jr $ra
 
 #Calculates mean of IntArr
