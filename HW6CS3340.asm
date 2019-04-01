@@ -13,12 +13,13 @@ PrintMean: .asciiz "The mean is: "
 PrintMedian: .asciiz "The median is: "
 PrintSD: .asciiz "The standard deviation is: "
 
-Mean: .double 0
+Mean: .float 0
 Median: .word 0
 SD: .word 0
 IntBuffer: .space  80
 #TODO: Remove test array
-IntArr: .word 18, 9, 27, 5, 48, 16, 2, 53, 64, 98, 49, 82, 7, 17, 53, 38, 65, 71, 24, 31, 0
+     .align 2
+IntArr: .space 80
 
 #-----Macros-----#
 .macro printInt (%int)
@@ -47,7 +48,7 @@ syscall
 .end_macro
 
 .macro printFloat (%float)
-li $v0, 3
+li $v0, 2
 l.s $f12, %float
 syscall
 .end_macro
@@ -61,15 +62,18 @@ syscall
 .text
 #-----Main Loop-----#
 main:
-#TODO: Fix file opening and reading
-#jal openFile
-#jal fillArr
+#TODO: Fix file opening and reading (idk what's wrong with it)
+jal openFile
+jal fillArr
+
 #exit if num of bytes read <= 0
-#ble $v0, 0, error
+ble $v0, 0, error
+
 printString(PrintBefore)
 jal printArr
 printString(NewLine)
 
+#TODO: Fix infinite loop in selection sort
 #jal selectionSortArr
 printString(PrintAfter)
 jal printArr
@@ -98,33 +102,36 @@ j exit
 openFile:
     li   $v0, 13
     la   $a0, inFile
-    la $a1, 0
+    li   $a1, 0 #flag for reading
+    li   $a2, 0 #mode is ignored
     syscall
-    #$s1 = File Descriptor
-    move $s1, $v0
-    li $v0, 14
-    la $a1, IntBuffer
+    move $s0, $v0 #save file descriptor 
+    
+    li   $v0, 14
+    move $a0, $s0 #file descriptor 
+    la   $a1, IntBuffer #address of buffer
+    li   $a2, 80 #buffer length
     syscall
-    #set $a0 to address of filename
-    move $a0, $s1
+
 jr $ra
 
 #Extracts integers from IntBuffer and inserts them into IntArr
 fillArr:
-    la $a0, ($s1)
+    la $a0, IntBuffer
     li $t1, 48
     li $t2, 57
     la $a1, IntArr
     loop1:
-    #load character
-    addi $a0, $a0, 8
-    lb $t0, ($a0)
-    #test character
-    beqz $t0, endLoop1
-    blt $t0, $t1, loop1
-    bgt $t0, $t2, loop1
-    sw $t0, ($a1)
-    addi $a1, $a1, 1
+        #load character
+        addi $a0, $a0, 8
+        lb $t0, ($a0)
+        #test character
+        beqz $t0, endLoop1 #break on $t0 == 0
+        blt $t0, $t1, loop1
+        bgt $t0, $t2, loop1
+        subi $t0, $t0, 48
+        sw $t0, ($a1)
+        addi $a1, $a1, 4
     j loop1
     endLoop1:
 jr $ra
