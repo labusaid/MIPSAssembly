@@ -2,9 +2,19 @@
 NewLine: .asciiz "\n"
 Space: .asciiz " "
 Error: .asciiz  "No data was found in input file"
+Temp1: .word 0
+Temp2: .word 0
 
-inFile: "input.txt"
+inFile: .asciiz "input.txt"
+PrintBefore: .asciiz "The array before: "
+PrintAfter: .asciiz "The array after: "
+PrintMean: .asciiz "The mean is: "
+PrintMedian: .asciiz "The median is: "
+PrintSD: .asciiz "The standard deviation is: "
 
+Mean: .double 0
+Median: .word 0
+SD: .word 0
 IntBuffer: .space  80
 #TODO: Remove test array
 IntArr: .word 18, 9, 27, 5, 48, 16, 2, 53, 64, 98, 49, 82, 7, 17, 53, 38, 65, 71, 24, 31, 0
@@ -35,6 +45,12 @@ la $a0, %str
 syscall
 .end_macro
 
+.macro printFloat (%float)
+li $v0, 3
+l.s $f12, %float
+syscall
+.end_macro
+
 .macro printDoubleReg (%doublereg)
 li $v0, 3
 mov.d $f12, %doublereg
@@ -49,10 +65,30 @@ main:
 #jal fillArr
 #exit if num of bytes read <= 0
 #ble $v0, 0, error
+printString(PrintBefore)
 jal printArr
 printString(NewLine)
-jal selectionSortArr
+
+#jal selectionSortArr
+printString(PrintAfter)
 jal printArr
+printString(NewLine)
+
+printString(PrintMean)
+#TODO: Fix calcMean
+jal calcMean
+printFloat(Mean)
+printString(NewLine)
+
+printString(PrintMedian)
+jal calcMedian
+printInt(Median)
+printString(NewLine)
+
+printString(PrintSD)
+jal calcSD
+printInt(SD)
+printString(NewLine)
 
 j exit
 
@@ -147,17 +183,52 @@ selectionSortArr:
         syscall
         printString(Space)
 
-    bnez $t0, loop3 #exit loop if  selected element is 0
+    bnez $t0, loop3 #exit loop if selected element is 0
 jr $ra
 
 #Calculates mean of IntArr
 calcMean:
-
+    la $a1, IntArr
+    lw $t0, 0($a1)
+    li $t1, 0
+    li $t2, 0
+    #$t0 is the array int, $t1 is the total, $t2 is the num of items in the array
+    loop4:
+	add $t1, $t1, $t0
+        addi $a1, $a1, 4
+        lw $t0, 0($a1)
+        addi $t2, $t2, 1
+    bnez $t0, loop4 #exit loop if element is 0
+    
+    #using even registers for simplicity (could be changed to doubles easier)
+    sw $t1, Temp1
+    sw $t2, Temp2
+    lwc1 $f0, Temp1
+    lwc1 $f2, Temp2
+    cvt.s.w $f0, $f0
+    cvt.s.w $f2, $f2
+    div.s $f4, $f0, $f2
+    s.s $f4, Mean
 jr $ra
 
 #Calculates median of IntArr
 calcMedian:
-
+    #assumes list is already sorted
+    la $a1, IntArr
+    lw $t0, 0($a1)
+    li $t2, 0
+    #count num of items in loop
+    loop5:
+        addi $a1, $a1, 4
+        lw $t0, 0($a1)
+        addi $t2, $t2, 1
+    bnez $t0, loop5 #exit loop if element is 0
+    div $t1, $t2, 2
+    mul $t1, $t1, 4
+    la $a1, IntArr
+    add $a1, $a1, $t1
+    lw $t3, 0($a1)
+    sw $t3, Median
 jr $ra
 
 #Calculates standardDeviation of IntArr
