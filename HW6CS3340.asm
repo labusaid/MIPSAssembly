@@ -1,6 +1,7 @@
 .data
 NewLine: .asciiz "\n"
 Space: .asciiz " "
+Zero: .word 0
 Error: .asciiz  "No data was found in input file"
 Temp1: .word 0
 Temp2: .word 0
@@ -233,6 +234,42 @@ jr $ra
 
 #Calculates standardDeviation of IntArr
 calcSD:
+    #load first element and clear registers
+    la $a1, IntArr
+    lw $t0, 0($a1)
+    li $t1, 0
+    li $t2, 0
+    lwc1 $f0, Zero
+    lwc1 $f2, Zero
+    lwc1 $f4, Zero
+    
+    #$t0 is the array int, $t2 is the num of items in the array
+    loop6:
+    	#loads next element
+        addi $a1, $a1, 4
+        lw $t0, 0($a1)
+        addi $t2, $t2, 1 #counts elements in array
+        
+        #convert element to float
+        mtc1 $t0, $f2
+        cvt.s.w $f2, $f2
+        
+        #calculations
+        sub.s $f2, $f2, $f4 #subtracted mean from element
+        mul.s $f2, $f2, $f2 #squared $f2
+        add.s $f0, $f0, $f2 #added $f1
+        
+    bnez $t0, loop6 #exit loop if element is 0
+    
+    #convert num of elements into float
+    mtc1 $t2, $f8
+    cvt.s.w $f8, $f8
+    
+    #final calculations
+    div.s $f6, $f0, $f8
+    sqrt.s $f10, $f6
+    
+    s.s $f10, SD
 
 jr $ra
 
