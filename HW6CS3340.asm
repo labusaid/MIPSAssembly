@@ -123,7 +123,7 @@ fillArr:
     la $a1, IntArr
     loop1:
         #load character
-        addi $a0, $a0, 8
+        addi $a0, $a0, 1
         lb $t0, ($a0)
         #test character
         beqz $t0, endLoop1 #break on $t0 == 0
