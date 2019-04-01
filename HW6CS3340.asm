@@ -92,7 +92,7 @@ printString(NewLine)
 
 printString(PrintSD)
 jal calcSD
-printInt(SD)
+printFloat(SD)
 printString(NewLine)
 
 j exit
