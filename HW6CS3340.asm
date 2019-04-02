@@ -73,7 +73,7 @@ jal printArr
 printString(NewLine)
 
 #TODO: Fix infinite loop in selection sort
-#jal selectionSortArr
+jal selectionSortArr
 printString(PrintAfter)
 jal printArr
 printString(NewLine)
@@ -168,12 +168,9 @@ selectionSortArr:
     lw $t2, 0($a1)
     loop3:
         #selects next elements of IntArr
-        addi $a1, $a1, 4
-        lw $t0, 0($a1)
-        move $a2, $a1
-        lw $t1, 0($a2)
-        addi $a3, $a1, 4
-        lw $t2, 0($a3)
+        move $a2, $a1 #mirror $t0 to $t1
+        lw $t2, 0($a2)
+        move $a3, $a2
         
         #$t0 is selected element, $t1 is compared element; $a1 and $a2 are their respective addresses
         inLoop3:
@@ -190,13 +187,10 @@ selectionSortArr:
 
         #swap selected element with min found
         sw $t0, 0($a3) #save $t0 to min address
-        sw $t3, 0($a1) #save $t3 to selected address
-
-        #debug
-        li $v0, 1
-        move $a0, $t0
-        syscall
-        printString(Space)
+        sw $t2, 0($a1) #save $t2 to selected address
+        
+        addi $a1, $a1, 4
+        lw $t0, 0($a1)
 
     bnez $t0, loop3 #exit loop if selected element is 0
 jr $ra
