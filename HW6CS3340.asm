@@ -62,7 +62,6 @@ syscall
 .text
 #-----Main Loop-----#
 main:
-#TODO: Fix file opening and reading (idk what's wrong with it)
 jal openFile
 jal fillArr
 
@@ -80,7 +79,6 @@ jal printArr
 printString(NewLine)
 
 printString(PrintMean)
-#TODO: Fix calcMean
 jal calcMean
 printFloat(Mean)
 printString(NewLine)
@@ -121,17 +119,26 @@ fillArr:
     li $t1, 48
     li $t2, 57
     la $a1, IntArr
+    li $t3, 10
+    sub $a0, $a0, 1
     loop1:
         #load character
         addi $a0, $a0, 1
         lb $t0, ($a0)
         #test character
         beqz $t0, endLoop1 #break on $t0 == 0
-        blt $t0, $t1, loop1
-        bgt $t0, $t2, loop1
-        subi $t0, $t0, 48
-        sw $t0, ($a1)
-        addi $a1, $a1, 4
+        bne $t0, $t3, notNewLine #if($t0 == 10)
+            sw $t5, ($a1)
+            addi $a1, $a1, 4
+            li $t5, 0
+            j loop1
+        notNewLine:
+        blt $t0, $t1, loop1 #ignore if $t0 < 48
+        bgt $t0, $t2, loop1 #ignore if $t0 > 57
+        subi $t6, $t0, 48 #convert from ascii to value
+        mult $t5, $t3 #$t5*10
+        mflo $t5
+        add $t5, $t5, $t6 #$t5 += $t0
     j loop1
     endLoop1:
 jr $ra
