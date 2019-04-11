@@ -17,7 +17,6 @@ Mean: .float 0
 Median: .word 0
 SD: .word 0
 IntBuffer: .space  80
-#TODO: Remove test array
      .align 2
 IntArr: .space 80
 
@@ -72,7 +71,6 @@ printString(PrintBefore)
 jal printArr
 printString(NewLine)
 
-#TODO: Fix infinite loop in selection sort
 jal selectionSortArr
 printString(PrintAfter)
 jal printArr
