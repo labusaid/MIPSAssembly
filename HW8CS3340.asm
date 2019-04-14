@@ -1,67 +1,24 @@
+.include "Macros.asm"
+
 .data
 NewLine: .asciiz "\n"
-Space: .asciiz " "
-Error: .asciiz  "An error occured"
-
-inFile: .asciiz  " "
+Space: .asciiz  " "
+Error: .asciiz  "error in file read"
+.align 2
+inFile: .space  64
 inFilePrompt: .asciiz  "Please input the file name."
 
 Buffer: .space  1024
-
-#TODO: Move macros to a seperate file before submitting
-#-----Macros-----#
-.macro printInt (%int)
-li $v0, 1
-lw $a0, %int
-syscall
-.end_macro
-
-.macro readInt (%int)
-li $v0, 5
-syscall
-sw $v0, %int
-.end_macro
-
-.macro printString (%str)
-li $v0, 4
-la $a0, %str
-syscall
-.end_macro
-
-.macro readString (%str)
-li $v0, 8
-li $a1, 20
-la $a0, %str
-syscall
-.end_macro
-
-.macro printFloat (%float)
-li $v0, 2
-l.s $f12, %float
-syscall
-.end_macro
-
-.macro printDoubleReg (%doublereg)
-li $v0, 3
-mov.d $f12, %doublereg
-syscall
-.end_macro
-
-.macro promptString (%prompt, %save)
-li $v0, 54
-la $a0, %prompt
-la $a1, %save
-syscall
-.end_macro
 
 .text
 #-----Main-----#
 main:
 #get input file name
 promptString(inFilePrompt,inFile)
+removeNL()
 
 #check if something was input
-#la $t1, FileName
+#la $t1, inFile
 #la $t2, ($t1)
 #beq $t2, $zero, exit
 
@@ -73,6 +30,7 @@ blt $v0, 0, error
 jal readFile
 
 #print contents of buffer
+printString(Buffer)
 
 #compress
 
@@ -88,7 +46,7 @@ j exit
 #opens file
 openFile:
     li   $v0, 13
-    la   $a0, inFile
+    la  $a0, inFile
     li   $a1, 0 #flag for reading
     li   $a2, 0 #mode is ignored
     syscall
