@@ -5,15 +5,39 @@ lw $a0, %int
 syscall
 .end_macro
 
+.macro printIntReg(%intreg)
+li $v0, 1
+move $a0, %intreg
+syscall
+.end_macro
+
 .macro readInt(%int)
 li $v0, 5
 syscall
 sw $v0, %int
 .end_macro
 
+.macro printChar(%char)
+li $v0, 11
+la $a0, %char
+syscall
+.end_macro
+
+.macro printCharReg(%charreg)
+li $v0, 11
+move $a0, %charreg
+syscall
+.end_macro
+
 .macro printString(%str)
 li $v0, 4
 la $a0, %str
+syscall
+.end_macro
+
+.macro printStringReg(%strreg)
+li $v0, 4
+move $a0, %strreg
 syscall
 .end_macro
 

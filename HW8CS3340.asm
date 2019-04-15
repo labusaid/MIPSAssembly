@@ -8,7 +8,19 @@ Error: .asciiz  "error in file read"
 inFile: .space  64
 inFilePrompt: .asciiz  "Please input the file name."
 
+OrigD: .asciiz "Original Data:\n"
+CompD: .asciiz "Compressed Data:\n"
+DcompD: .asciiz "Decompressed Data:\n"
+OrigFS: .asciiz "Original File Size:\n"
+CompFS: .asciiz "Compressed File Size:\n"
+
+.align 2
+originalSize: .word 0
+compressedSize: .word 0
+
+.align 2
 Buffer: .space  1024
+ucBuffer: .space 1024
 
 .text
 #-----Main-----#
@@ -29,16 +41,43 @@ blt $v0, 0, error
 #read file into buffer
 jal readFile
 
+#closes file
+jal closeFile
+
 #print contents of buffer
+printString(OrigD)
 printString(Buffer)
+printString(NewLine)
 
 #compress
+li $v0, 9
+li $a0, 1024
+syscall
+move $s1, $v0 #save heap address to $s1
+jal compress
 
 #print contents of buffer
+printString(CompD)
+jal printCompressed
+printString(NewLine)
 
 #decompress
+move $a1, $s1
+jal decompress
+
+#print decompressed data
+printString(DcompD)
+printString(ucBuffer)
+printString(NewLine)
 
 #print number of bytes in each
+printString(OrigFS)
+printIntReg($s2)
+printString(NewLine)
+
+printString(CompFS)
+printIntReg($s3)
+printString(NewLine)
 
 j exit
 
@@ -60,6 +99,7 @@ readFile:
     la   $a1, Buffer #address of buffer
     li   $a2, 1024 #buffer length
     syscall
+    sw $v0, originalSize #stores size in bytes of read file
 jr $ra
 
 #closes file
@@ -81,6 +121,79 @@ printBuffer:
     lw $a0, 0($a1)
     #exit loop if IntArr element is 0
     bnez $a0, loop2
+jr $ra
+
+#compresses the buffer starting at $a1
+compress:
+    la $t0, Buffer
+    move $t1, $s1 #heapPtr
+    
+    addi $t4, $zero, 1 #$t4 = counter
+    loop1:
+        lb $t2, 0($t0) #$t2 = current character
+        lb $t3, 1($t0) #$t3 = next character
+        
+        bne $t2, $t3, endRun
+        
+        addi $t4, $t4, 1 #counter++
+        addi $t0, $t0, 1 #point to next char in static buffer
+        j loop1
+        
+        endRun:
+        sb $t2, 0($t1) #store byte ascii char
+        sb $t4, 1($t1) #store byte count
+        
+        addi $t0, $t0, 1 #staticPtr++
+        addi $t1, $t1, 2 #heapPtr+=2 because byte char and byte count
+        
+        addi $t4, $zero, 1 #reset counter
+        beq $t3, 0, exitLoop1 #if next char is null, exit
+        j loop1
+        
+    exitLoop1:
+    sub $v0, $t1, $s1 #return length of compressed data in $v0
+jr $ra
+
+printCompressed:
+    move $a1, $s1
+    #load character into $t1
+    lb $t1, ($a1)
+    #load count into $t2 (offset by 1 byte from char)
+    lb $t2, 1($a1)
+    printCompressedLoop:
+        printCharReg($t1)
+        printIntReg($t2)
+        
+        #next character
+        addi $a1, $a1, 2
+        
+        #load character into $t1
+        lb $t1, ($a1)
+        #load count into $t2 (offset by 1 byte from char)
+        lb $t2, 1($a1)
+    bne $t1, 0 printCompressedLoop
+jr $ra
+
+#decompresses the buffer starting at $a1
+decompress:
+    la $a2, ucBuffer
+    decompressLoop:
+        #load character into $t1
+        lb $t1, ($a1)
+        #load count into $t2 (offset by 1 byte from char)
+        lb $t2, 1($a1)
+
+        #for count, sb char ($t3 is index)
+        li $t3, 0 #i = 0
+        dcCountLoop:
+            sb $t1, ($a2)
+            addi $t3, $t3 1 #i++
+            addi $a2, $a2, 1
+        blt $t3, $t2, dcCountLoop #i <= $t3
+        
+        #next character
+        addi $a1, $a1, 2
+    bne $t1, 0 decompressLoop
 jr $ra
 
 #error
