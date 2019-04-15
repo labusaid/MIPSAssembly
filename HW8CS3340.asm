@@ -29,11 +29,6 @@ main:
 promptString(inFilePrompt,inFile)
 removeNL()
 
-#check if something was input
-#la $t1, inFile
-#la $t2, ($t1)
-#beq $t2, $zero, exit
-
 #open file and exit if not found
 jal openFile
 blt $v0, 0, error
@@ -72,11 +67,11 @@ printString(NewLine)
 
 #print number of bytes in each
 printString(OrigFS)
-printIntReg($s2)
+printInt(originalSize)
 printString(NewLine)
 
 printString(CompFS)
-printIntReg($s3)
+printInt(compressedSize)
 printString(NewLine)
 
 j exit
@@ -126,32 +121,34 @@ jr $ra
 #compresses the buffer starting at $a1
 compress:
     la $t0, Buffer
-    move $t1, $s1 #heapPtr
+    move $t1, $s1
     
-    addi $t4, $zero, 1 #$t4 = counter
-    loop1:
-        lb $t2, 0($t0) #$t2 = current character
-        lb $t3, 1($t0) #$t3 = next character
+    li $t4, 1 #$t4 = 1
+    compressLoop:
+        lb $t2, 0($t0) #$t2 = current char
+        lb $t3, 1($t0) #$t3 = next char
         
-        bne $t2, $t3, endRun
+        bne $t2, $t3, onEnd
         
-        addi $t4, $t4, 1 #counter++
+        addi $t4, $t4, 1 #count++
         addi $t0, $t0, 1 #point to next char in static buffer
-        j loop1
-        
-        endRun:
+    j compressLoop
+    
+    #runs on end of matching chars
+    onEnd:
         sb $t2, 0($t1) #store byte ascii char
         sb $t4, 1($t1) #store byte count
         
-        addi $t0, $t0, 1 #staticPtr++
-        addi $t1, $t1, 2 #heapPtr+=2 because byte char and byte count
+        addi $t0, $t0, 1 #staticPointer++
+        addi $t1, $t1, 2 #heap += 2
         
-        addi $t4, $zero, 1 #reset counter
-        beq $t3, 0, exitLoop1 #if next char is null, exit
-        j loop1
-        
-    exitLoop1:
-    sub $v0, $t1, $s1 #return length of compressed data in $v0
+        li $t4, 1 #reset counter
+        beq $t3, 0, exitCompressLoop #exit when nextchar == null
+    j compressLoop
+    
+    exitCompressLoop:
+    sub $t1, $t1, $s1 #saves size of compressed data
+    sw $t1, compressedSize
 jr $ra
 
 printCompressed:
